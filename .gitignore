@@ -1,0 +1,38 @@
+
+
+.DS_Store
+*/.DS_Store
+
+release
+
+# Object files
+*.o
+
+# Libraries
+*.so
+*.lib
+*.a
+*.dll
+*.so.*
+*.dylib
+
+tags*
+
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Make.properties
+./Make.properties
+cgh_bin
+
+# Codeblocks project files
+*.layout
+*.cbp
+
+# Other files
+*.png
+*.dot
+
