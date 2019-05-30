@@ -33,6 +33,8 @@ namespace dnss {
 
         virtual GNFA* mkGNFA(Symbols& ctpSymbols, SymbolMap& symbolMap, RecordSymbolVec& recordSymbolMap, GNFA* gnfa, PDS<Symbol>* pds, PDSStateMap& pdsStateMap) = 0;
 
+        virtual void mkPDSTransition(Symbol sourceSymbol, Symbols& alphabet, Symbols& ctpSymbols, SymbolsVec& powerset, SymbolMap& symbolMap, PDS<Symbol>* pds, PDSStateMap& stateMap) = 0;
+
     };
 
     class StillOperation : public Operation {
@@ -100,6 +102,8 @@ namespace dnss {
 
         GNFA* mkGNFA(Symbols& ctpSymbols, SymbolMap& symbolMap, RecordSymbolVec& recordSymbolMap, GNFA* gnfa, PDS<Symbol>* pds, PDSStateMap& pdsStateMap);
 
+        void mkPDSTransition(Symbol sourceSymbol, Symbols& alphabet, Symbols& ctpSymbols, SymbolsVec& powerset, SymbolMap& symbolMap, PDS<Symbol>* pds, PDSStateMap& stateMap);
+
     };
 
     class JumpCTP : public JumpOperation {
@@ -112,6 +116,8 @@ namespace dnss {
 
         GNFA* mkGNFA(Symbols& ctpSymbols, SymbolMap& symbolMap, RecordSymbolVec& recordSymbolMap, GNFA* gnfa, PDS<Symbol>* pds, PDSStateMap& pdsStateMap);
 
+        void mkPDSTransition(Symbol sourceSymbol, Symbols& alphabet, Symbols& ctpSymbols, SymbolsVec& powerset, SymbolMap& symbolMap, PDS<Symbol>* pds, PDSStateMap& stateMap);
+
     };
 
     class JumpCTK : public JumpOperation {
@@ -123,6 +129,8 @@ namespace dnss {
         ~JumpCTK() {}
 
         GNFA* mkGNFA(Symbols& ctpSymbols, SymbolMap& symbolMap, RecordSymbolVec& recordSymbolMap, GNFA* gnfa, PDS<Symbol>* pds, PDSStateMap& pdsStateMap);
+
+        void mkPDSTransition(Symbol sourceSymbol, Symbols& alphabet, Symbols& ctpSymbols, SymbolsVec& powerset, SymbolMap& symbolMap, PDS<Symbol>* pds, PDSStateMap& stateMap);
 
     };
 

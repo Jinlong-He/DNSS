@@ -2,19 +2,16 @@ A-->B
 flag:
 
 B-->C
-flag:FLAG_ACTIVITY_CLEAR_TOP
-
-C-->A
-flag:
+flag:FLAG_ACTIVITY_NEW_TASK
 
 C-->D
 flag:
 
-D-->A
-flag:FLAG_ACTIVITY_NEW_TASK
-
-D-->B
+B-->D
 flag:
 
-B-->C
+A-->D
+flag:
+
+D-->B
 flag:FLAG_ACTIVITY_NEW_TASK

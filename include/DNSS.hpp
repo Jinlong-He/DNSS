@@ -19,6 +19,7 @@ namespace dnss {
     typedef unordered_map<Symbol, JumpOperations> JumpTransMap;
     typedef unordered_map<Symbol, ID> AddressMap;
     typedef unordered_map<Symbol, Symbols> Symbol2SymbolsMap;
+    typedef unordered_map<JumpOperation*, Symbols> JumpOP2SymbolsMap;
     typedef vector<AddressMap> AddressMaps;
     typedef vector<GNFA*> NFARelation;
     typedef vector<NFARelation> NFARelations;
@@ -31,6 +32,7 @@ namespace dnss {
     typedef unordered_map<Aft, Symbol> AftMap;
     typedef vector<Activity*> ActivityVec;
     typedef vector<Aft> AftVec;
+    typedef vector<PDS<Symbol>*> PDSMap;
 
     class DNSS {
     private:
@@ -38,6 +40,8 @@ namespace dnss {
         Symbols alphabet;
         StillTransMap stillTransMap;
         JumpTransMap jumpTransMap;
+        JumpOP2SymbolsMap jumpOP2SymbolsMap;
+        JumpOperations jumpOperations;
         PDS<Symbol>* pds;
         Symbols ctpSymbols;
         SymbolsVec powerset;
@@ -62,6 +66,7 @@ namespace dnss {
         ActivityVec activityVec;
         AftMap aftMap;
         AftVec aftVec;
+        PDSMap pdsMap;
     public:
         DNSS() : pds(nullptr) {}
 
@@ -83,11 +88,13 @@ namespace dnss {
                 activityVec.push_back(act);
             }
             initialSymbol = activityMap[parse.getMainActivity()];
+            unordered_map<Symbol2, JumpOperation*> jumpOPMap;
             for (Action* action : parse.getActions()) {
                 Activity* sAct = action -> getSourceAct();
                 Activity* tAct = action -> getTargetAct();
                 Symbol ss = activityMap[sAct];
                 Symbol ts = activityMap[tAct];
+                mkPOP(ts);
                 if (!(action -> hasNTKFlag())) {
                     if (action -> hasCTKFlag()) {
                         mkCTK(ss, ts);
@@ -101,13 +108,42 @@ namespace dnss {
                     }
                 } else {
                     if (action -> hasCTKFlag()) {
-                        mkJumpCTK(ss, ts);
+                        JumpOperation* op = jumpOPMap[Symbol2(0, ts)];
+                        if (!op) {
+                            op = new JumpCTK(ts);
+                            jumpOPMap[Symbol2(0, ts)] = op;
+                            jumpOperations.insert(op);
+                        }
+                        jumpTransMap[ss].insert(op);
+                        jumpOP2SymbolsMap[op].insert(ss);
                     } else if (tAct -> getLmd() == lmd_stk || action -> hasCTPFlag()) {
-                        mkJumpCTP(ss, ts);
+                        ctpSymbols.insert(ts);
+                        JumpOperation* op = jumpOPMap[Symbol2(1, ts)]; 
+                        if (!op) { 
+                            op = new JumpCTP(ts);
+                            jumpOPMap[Symbol2(1, ts)] = op;
+                            jumpOperations.insert(op);
+                        }
+                        jumpTransMap[ss].insert(op);
+                        jumpOP2SymbolsMap[op].insert(ss);
                     } else if (action -> hasSTPFlag()) {
-                        mkJumpPUSH(ss, ts);
+                        JumpOperation* op = jumpOPMap[Symbol2(3, ts)];
+                        if (!op) {
+                            op = new JumpPUSH(ts);
+                            jumpOPMap[Symbol2(3, ts)] = op;
+                            jumpOperations.insert(op);
+                        }
+                        jumpTransMap[ss].insert(op);
+                        jumpOP2SymbolsMap[op].insert(ss);
                     } else {
-                        mkJumpPUSH(ss, ts);
+                        JumpOperation* op = jumpOPMap[Symbol2(3, ts)];
+                        if (!op) {
+                            op = new JumpPUSH(ts);
+                            jumpOPMap[Symbol2(3, ts)] = op;
+                            jumpOperations.insert(op);
+                        }
+                        jumpTransMap[ss].insert(op);
+                        jumpOP2SymbolsMap[op].insert(ss);
                     }
                 }
             }
@@ -127,10 +163,8 @@ namespace dnss {
                     delete op;
                 }
             }
-            for (auto& mapPair : jumpTransMap) {
-                for (JumpOperation* op : mapPair.second) {
-                    delete op;
-                }
+            for (JumpOperation* op : jumpOperations) {
+                delete op;
             }
             for (auto gnfa : gnfas) {
                 delete gnfa;
@@ -151,11 +185,15 @@ namespace dnss {
 
         void addRelation(NFARelation& relation, AddressMap& relationAddressMap);
 
+        void addRelationNew(NFARelation& relation, AddressMap& relationAddressMap);
+
         void updateRelation(NFARelation& relation, GNFA* gnfa, ID pos, NFARelation& newRelation, AddressMap& newRelationAddressMap);
 
         void updateRelation(NFARelation& relation, GNFA* gnfa, NFARelation& newRelation, AddressMap& newRelationAddressMap);
 
         GNFA* mkTopGNFA(GNFA* gnfa, Symbol topSymbol);
+
+        GNFA* mkTopGNFA(GNFA* gnfa, Symbols topSymbols);
 
         void getNFA(const DFA<Symbol>& dfa);
 

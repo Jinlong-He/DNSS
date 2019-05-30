@@ -8,10 +8,6 @@ activity:com.android.music.MediaPlaybackActivity
 LaunchMode:stk
 TaskAffinity:
 
-activity:AudioPreview
-LaunchMode:std
-TaskAffinity:
-
 activity:com.android.music.ArtistAlbumBrowserActivity
 LaunchMode:std
 TaskAffinity:android.task.music

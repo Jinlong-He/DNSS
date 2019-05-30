@@ -63,6 +63,56 @@ namespace dnss {
         }
     }
 
+        void JumpCTK::mkPDSTransition(Symbol sourceSymbol, Symbols& alphabet, Symbols& ctpSymbols, SymbolsVec& powerset, SymbolMap& symbolMap, PDS<Symbol>* pds, PDSStateMap& state2Map) {
+            Symbol symbol = 0;
+            Symbols symbols;
+            if (ctpSymbols.count(targetSymbol) == 0) {
+                symbol = symbolMap[RecordSymbol(targetSymbol, symbols)];
+            } else {
+                symbols.insert(targetSymbol);
+                symbol = symbolMap[RecordSymbol(targetSymbol, symbols)];
+            }
+            PDSState* botState = state2Map[bot];
+            PDSState* pState = state2Map[p];
+            pds -> mkPushPDSTrans(botState, pState, bot, Symbol2(symbol, bot));
+    }
+
+    void JumpPUSH::mkPDSTransition(Symbol sourceSymbol, Symbols& alphabet, Symbols& ctpSymbols, SymbolsVec& powerset, SymbolMap& symbolMap, PDS<Symbol>* pds, PDSStateMap& state2Map) {
+        PDSState* pState = state2Map[p];
+        for (Symbols symbols : powerset) {
+            Symbol ssymbol = symbolMap[RecordSymbol(sourceSymbol, symbols)];
+            Symbol tsymbol = 0;
+            if (ctpSymbols.count(targetSymbol) == 0) {
+                tsymbol = symbolMap[RecordSymbol(targetSymbol, symbols)];
+            } else {
+                symbols.insert(targetSymbol);
+                tsymbol = symbolMap[RecordSymbol(targetSymbol, symbols)];
+            }
+            pds -> mkPushPDSTrans(pState, pState, ssymbol, Symbol2(tsymbol, ssymbol));
+        }
+    }
+
+    void JumpCTP::mkPDSTransition(Symbol sourceSymbol, Symbols& alphabet, Symbols& ctpSymbols, SymbolsVec& powerset, SymbolMap& symbolMap, PDS<Symbol>* pds, PDSStateMap& state2Map) {
+        PDSState* pState = state2Map[p];
+        PDSState* epsState = state2Map[eps];
+        for (Symbols symbols : powerset) {
+            Symbol ssymbol = symbolMap[RecordSymbol(sourceSymbol, symbols)];
+            if (symbols.count(targetSymbol) == 0) {
+                symbols.insert(targetSymbol);
+                Symbol tsymbol = symbolMap[RecordSymbol(targetSymbol, symbols)];
+                pds -> mkPushPDSTrans(pState, pState, ssymbol, Symbol2(tsymbol, ssymbol));
+            } else {
+                pds -> mkPopPDSTrans(pState, epsState, ssymbol);
+                Symbol tsymbol = symbolMap[RecordSymbol(targetSymbol, symbols)];
+                pds -> mkReplacePDSTrans(epsState, pState, tsymbol, tsymbol);
+                for (Symbol s : alphabet) {
+                    Symbol symbol = symbolMap[RecordSymbol(s, symbols)];
+                    pds -> mkPopPDSTrans(epsState, epsState, symbol);
+                }
+            }
+        }
+    }
+
 
     GNFA* JumpPUSH::mkGNFA(Symbols& ctpSymbols, SymbolMap& symbolMap, RecordSymbolVec& recordSymbolMap, GNFA* gnfa, PDS<Symbol>* pds, PDSStateMap& pdsStateMap) {
         NFAState2Map copyMap;
@@ -94,6 +144,9 @@ namespace dnss {
         }
         GNFA::cpNFA(copyMap, work);
         newGNFA -> postStar(pds, recordSymbolMap);
+        if (newGNFA -> getNFA() -> isEmpty()) {
+            cout << "PUSH" << endl;
+        }
         return newGNFA;
     }
 
@@ -114,7 +167,6 @@ namespace dnss {
                 symbols.insert(targetSymbol);
                 Symbol tsymbol = symbolMap[RecordSymbol(targetSymbol, symbols)];
                 NFAState<Symbol>* midState = postStarMap[StateChar(initialState, tsymbol)];
-                cout << midState << endl;
                 NFAState<Symbol>* newMidState = copyMap[midState];
                 newInitialState -> addTrans(tsymbol, newMidState);
                 for (NFAState<Symbol>* targetState : mapPair.second) {
@@ -122,15 +174,23 @@ namespace dnss {
                     work.insert(targetState);
                 }
             }
-            if (symbol == targetSymbol) {
-                for (NFAState<Symbol>* targetState : mapPair.second) {
-                    newInitialState -> addTrans(mapPair.first, copyMap[targetState]);
-                    work.insert(targetState);
+        }
+        for (NFAState<Symbol>* state : nfa -> getStates()) {
+            for (auto& mapPair : state -> getTransMap()) {
+                Symbol symbol = recordSymbolMap[mapPair.first].first;
+                if (symbol == targetSymbol) {
+                    for (NFAState<Symbol>* targetState : mapPair.second) {
+                        newInitialState -> addTrans(mapPair.first, copyMap[targetState]);
+                        work.insert(targetState);
+                    }
                 }
             }
         }
         GNFA::cpNFA(copyMap, work);
         newGNFA -> postStar(pds, recordSymbolMap);
+        if (newGNFA -> getNFA() -> isEmpty()) {
+            cout << "CTP" << endl;
+        }
         return newGNFA;
     }
 
